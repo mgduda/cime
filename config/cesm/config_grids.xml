@@ -909,6 +909,15 @@
       <mask>tx0.1v2</mask>
     </model_grid>
 
+    <!-- MPAS-A grids -->
+
+    <model_grid alias="mpasa120_mpasa120" not_compset="_POP">
+      <grid name="atm">mpasa120</grid>
+      <grid name="lnd">mpasa120</grid>
+      <grid name="ocnice">mpasa120</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
     <!-- new runoff grids for data runoff model DROF -->
 
     <model_grid alias="T31_g37_rx1" compset="_DROF">
@@ -1295,6 +1304,11 @@
       <nx>174098</nx> <ny>1</ny>
       <desc>ne0np4CONUS.ne30x8 is a Spectral Elem 1-deg grid with a 1/8 deg refined region over the continental United States:</desc>
       <support>Test support only</support>
+    </domain>
+
+    <domain name="mpasa120">
+      <nx>40962</nx> <ny>1</ny>
+      <desc>MPAS-A 120-km quasi-uniform mesh:</desc>
     </domain>
 
     <domain name="TL319">
