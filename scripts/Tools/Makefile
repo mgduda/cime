@@ -556,8 +556,10 @@ cospsimulator_intr.o: $(COSP_LIBDIR)/libcosp.a
 endif
 
 ifdef MPAS_LIBDIR
+ABS_INSTALL_SHAREDPATH = $(abspath $(INSTALL_SHAREDPATH))
+ABS_ESMF_PATH = $(abspath $(INSTALL_SHAREDPATH)/$(COMP_INTERFACE)/$(ESMFDIR)/$(NINST_VALUE))
 $(MPAS_LIBDIR)/libmpas.a: cam_abortutils.o
-	$(MAKE) -C $(MPAS_LIBDIR) FFLAGS='$(FREEFLAGS) $(FFLAGS)' FCINCLUDES='$(INCLDIR) $(INCS)'
+	$(MAKE) -C $(MPAS_LIBDIR) FFLAGS='$(FREEFLAGS) $(FFLAGS)' FCINCLUDES='$(INCLDIR) $(INCS) -I$(ABS_INSTALL_SHAREDPATH)/include -I$(ABS_ESMF_PATH)/include'
 
 dyn_grid.o: $(MPAS_LIBDIR)/libmpas.a
 endif
