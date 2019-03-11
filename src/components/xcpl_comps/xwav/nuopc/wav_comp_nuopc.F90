@@ -50,11 +50,8 @@ module wav_comp_nuopc
   integer , allocatable      :: gindex(:)
   real(r8), allocatable      :: x2d(:,:)
   real(r8), allocatable      :: d2x(:,:)
-  character(CXX)             :: flds_w2x = ''
-  character(CXX)             :: flds_x2w = ''
   integer                    :: nxg                  ! global dim i-direction
   integer                    :: nyg                  ! global dim j-direction
-  integer                    :: mpicom               ! mpi communicator
   integer                    :: my_task              ! my task in mpi communicator mpicom
   integer                    :: inst_index           ! number of current instance (ie. 1)
   character(len=16)          :: inst_name            ! fullname of current instance (ie. "wav_0001")
@@ -63,22 +60,21 @@ module wav_comp_nuopc
   integer, parameter :: master_task = 0
   logical :: mastertask
   character(len=*),parameter :: grid_option = "mesh" ! grid_de, grid_arb, grid_reg, mesh
-  integer                    :: dbrc
   character(*),parameter     :: modName =  "(xwav_comp_nuopc)"
   character(*),parameter     :: u_FILE_u = __FILE__
   integer, parameter         :: dbug = 10
 
 !===============================================================================
 contains
-!===============================================================================
-
+  !===============================================================================
   subroutine SetServices(gcomp, rc)
     type(ESMF_GridComp)  :: gcomp
     integer, intent(out) :: rc
     character(len=*),parameter  :: subname=trim(modName)//':(SetServices) '
 
     rc = ESMF_SUCCESS
-    if (dbug > 5) call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=rc)
+    if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! the NUOPC gcomp component will register the generic methods
     call NUOPC_CompDerive(gcomp, model_routine_SS, rc=rc)
@@ -99,22 +95,22 @@ contains
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
     ! attach specializing method(s)
-
     call NUOPC_CompSpecialize(gcomp, specLabel=model_label_Advance, specRoutine=ModelAdvance, rc=rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
     call ESMF_MethodRemove(gcomp, label=model_label_SetRunClock, rc=rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
-
     call NUOPC_CompSpecialize(gcomp, specLabel=model_label_SetRunClock, specRoutine=ModelSetRunClock, rc=rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
     call NUOPC_CompSpecialize(gcomp, specLabel=model_label_Finalize, specRoutine=ModelFinalize, rc=rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    if (dbug > 5) call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=dbrc)
+    call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=rc)
+    if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
   end subroutine SetServices
+
 
   !===============================================================================
 
@@ -128,7 +124,6 @@ contains
 
     ! local variables
     type(ESMF_VM)      :: vm
-    integer            :: lmpicom
     character(CL)      :: cvalue
     character(CS)      :: stdname
     integer            :: n
@@ -143,20 +138,15 @@ contains
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
-    if (dbug > 5) then
-       call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
-    endif
-    !----------------------------------------------------------------------------
-    ! generate local mpi comm
-    !----------------------------------------------------------------------------
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=rc)
+    if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
     call ESMF_GridCompGet(gcomp, vm=vm, rc=rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call ESMF_VMGet(vm, mpiCommunicator=lmpicom, localpet=my_task, rc=rc)
+    call ESMF_VMGet(vm, localpet=my_task, rc=rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call mpi_comm_dup(lmpicom, mpicom, ierr)
     mastertask = my_task == 0
 
     !----------------------------------------------------------------------------
@@ -170,7 +160,7 @@ contains
     ! set logunit and set shr logging to my log file
     !----------------------------------------------------------------------------
 
-    call shr_nuopc_set_component_logging(gcomp, my_task==master_task, logunit, shrlogunit, shrloglev)
+    call shr_nuopc_set_component_logging(gcomp, mastertask, logunit, shrlogunit, shrloglev)
 
     !----------------------------------------------------------------------------
     ! Initialize xwav
@@ -193,30 +183,30 @@ contains
     if (nxg /= 0 .and. nyg /= 0) then
 
        call fld_list_add(fldsFrWav_num, fldsFrWav, trim(flds_scalar_name))
-       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_lamult'  , flds_concat=flds_w2x)
-       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_ustokes' , flds_concat=flds_w2x)
-       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_vstokes' , flds_concat=flds_w2x)
-       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_hstokes' , flds_concat=flds_w2x)
+       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_lamult'  )
+       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_ustokes' )
+       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_vstokes' )
+       call fld_list_add(fldsFrWav_num, fldsFrWav, 'Sw_hstokes' )
 
        do n = 1,fldsFrWav_num
-          write(logunit,*)'Advertising From Xwav ',trim(fldsFrWav(n)%stdname)
+          if (mastertask) write(logunit,*)'Advertising From Xwav ',trim(fldsFrWav(n)%stdname)
           call NUOPC_Advertise(exportState, standardName=fldsFrWav(n)%stdname, &
                TransferOfferGeomObject='will provide', rc=rc)
           if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
        enddo
 
        call fld_list_add(fldsToWav_num, fldsToWav, trim(flds_scalar_name))
-       call fld_list_add(fldsToWav_num, fldsToWav, 'Sa_u'       , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'Sa_v'       , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'Sa_tbot'    , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'Si_ifrac'   , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'So_t'       , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'So_u'       , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'So_v'       , flds_concat=flds_x2w)
-       call fld_list_add(fldsToWav_num, fldsToWav, 'So_bldepth' , flds_concat=flds_x2w)
+       call fld_list_add(fldsToWav_num, fldsToWav, 'Sa_u'       )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'Sa_v'       )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'Sa_tbot'    )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'Si_ifrac'   )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'So_t'       )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'So_u'       )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'So_v'       )
+       call fld_list_add(fldsToWav_num, fldsToWav, 'So_bldepth' )
 
        do n = 1,fldsToWav_num
-          write(logunit,*)'Advertising To Xwav ',trim(fldsToWav(n)%stdname)
+          if(mastertask) write(logunit,*)'Advertising To Xwav ',trim(fldsToWav(n)%stdname)
           call NUOPC_Advertise(importState, standardName=fldsToWav(n)%stdname, &
                TransferOfferGeomObject='will provide', rc=rc)
           if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
@@ -226,8 +216,8 @@ contains
        allocate(x2d(FldsToWav_num,lsize)); x2d(:,:)  = 0._r8
     end if
 
-    if (dbug > 5) call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=dbrc)
-
+    call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=rc)
+    if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
     !----------------------------------------------------------------------------
     ! Reset shr logging to original values
     !----------------------------------------------------------------------------
@@ -256,9 +246,8 @@ contains
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
-    if (dbug > 5) then
-       call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
-    endif
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=rc)
+
     !----------------------------------------------------------------------------
     ! Reset shr logging to my log file
     !----------------------------------------------------------------------------
@@ -273,7 +262,7 @@ contains
     ! grid_option specifies grid or mesh
     !--------------------------------
 
-    call shr_nuopc_grid_MeshInit(gcomp, nxg, nyg, mpicom, gindex, lon, lat, Emesh, rc)
+    call shr_nuopc_grid_MeshInit(gcomp, nxg, nyg, gindex, lon, lat, Emesh, rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, line=__LINE__, file=u_FILE_u)) return
 
     !--------------------------------
@@ -315,11 +304,11 @@ contains
        end if
     end do
 
-    call shr_nuopc_methods_State_SetScalar(dble(nxg),flds_scalar_index_nx, exportState, mpicom, &
+    call shr_nuopc_methods_State_SetScalar(dble(nxg),flds_scalar_index_nx, exportState, &
          flds_scalar_name, flds_scalar_num, rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
-    call shr_nuopc_methods_State_SetScalar(dble(nyg),flds_scalar_index_ny, exportState, mpicom, &
+    call shr_nuopc_methods_State_SetScalar(dble(nyg),flds_scalar_index_ny, exportState, &
          flds_scalar_name, flds_scalar_num, rc)
     if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
 
@@ -352,20 +341,20 @@ contains
     call shr_file_setLogLevel(shrloglev)
     call shr_file_setLogUnit (shrlogunit)
 
-    if (dbug > 5) call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=dbrc)
+    call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=rc)
 
   end subroutine InitializeRealize
 
   !===============================================================================
 
   subroutine ModelAdvance(gcomp, rc)
-    use shr_nuopc_utils_mod, only : shr_nuopc_memcheck
+    use shr_nuopc_utils_mod, only : shr_nuopc_memcheck, shr_nuopc_log_clock_advance
     type(ESMF_GridComp)  :: gcomp
     integer, intent(out) :: rc
 
     ! local variables
     type(ESMF_Clock)         :: clock
-    type(ESMF_State)         :: importState, exportState
+    type(ESMF_State)         :: exportState
     integer                  :: n
     integer                  :: shrlogunit     ! original log unit
     integer                  :: shrloglev      ! original log level
@@ -373,9 +362,7 @@ contains
     !-------------------------------------------------------------------------------
 
     rc = ESMF_SUCCESS
-    if (dbug > 5) then
-       call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
-    endif
+    call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=rc)
     call shr_nuopc_memcheck(subname, 3, mastertask)
     call shr_file_getLogUnit (shrlogunit)
     call shr_file_getLogLevel(shrloglev)
@@ -383,36 +370,13 @@ contains
     call shr_file_setLogUnit (logunit)
 
     !--------------------------------
-    ! query the Component for its clock, importState and exportState
-    !--------------------------------
-
-    call NUOPC_ModelGet(gcomp, modelClock=clock, importState=importState, exportState=exportState, rc=rc)
-    if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
-
-    if (dbug > 1) then
-      call shr_nuopc_methods_Clock_TimePrint(clock,subname//'clock',rc=rc)
-    endif
-
-    !--------------------------------
-    ! Unpack import state
-    !--------------------------------
-
-    do n = 1, FldsFrWav_num
-       if (fldsFrWav(n)%stdname /= flds_scalar_name) then
-          call state_getimport(importState, trim(fldsToWav(n)%stdname), x2d(n,:), rc=rc)
-          if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
-       end if
-    end do
-
-    !--------------------------------
-    ! Run model
-    !--------------------------------
-
-    call dead_run_nuopc('wav', d2x, gbuf, flds_w2x)
-
-    !--------------------------------
     ! Pack export state
     !--------------------------------
+
+    call NUOPC_ModelGet(gcomp, modelClock=clock, exportState=exportState, rc=rc)
+    if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
+
+    call dead_run_nuopc('wav', d2x, gbuf)
 
     do n = 1, FldsFrWav_num
        if (fldsFrWav(n)%stdname /= flds_scalar_name) then
@@ -426,24 +390,17 @@ contains
     !--------------------------------
 
     if (dbug > 1) then
-       if (my_task == master_task) then
-          call Print_FieldExchInfo(values=d2x, logunit=logunit, &
-               fldlist=fldsFrWav, nflds=fldsFrWav_num, istr="ModelAdvance: wav->mediator")
-       end if
        call shr_nuopc_methods_State_diagnose(exportState,subname//':ES',rc=rc)
        if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
-
-       call ESMF_ClockPrint(clock, options="currTime", preString="------>Advancing WAV from: ", rc=rc)
-       if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
-
-       call ESMF_ClockPrint(clock, options="stopTime", preString="--------------------------------> to: ", rc=rc)
-       if (shr_nuopc_methods_ChkErr(rc,__LINE__,u_FILE_u)) return
+       if (my_task == master_task) then
+          call shr_nuopc_log_clock_advance(clock, 'WAV', logunit)
+       endif
     endif
 
     call shr_file_setLogLevel(shrloglev)
     call shr_file_setLogUnit (shrlogunit)
 
-    if (dbug > 5) call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=dbrc)
+    call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=rc)
 
   end subroutine ModelAdvance
 
@@ -462,11 +419,11 @@ contains
     !--------------------------------
 
     rc = ESMF_SUCCESS
-    if (dbug > 5) call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=dbrc)
+    if (dbug > 5) call ESMF_LogWrite(subname//' called', ESMF_LOGMSG_INFO, rc=rc)
 
     call dead_final_nuopc('wav', logunit)
 
-    if (dbug > 5) call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=dbrc)
+    if (dbug > 5) call ESMF_LogWrite(subname//' done', ESMF_LOGMSG_INFO, rc=rc)
 
   end subroutine ModelFinalize
 
