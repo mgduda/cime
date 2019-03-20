@@ -568,10 +568,12 @@ ifdef MPAS_LIBDIR
   ifeq ($(PIO_VERSION),2)
     PIODEF := -DUSE_PIO2
   endif
+  INCLDIR+=-I$(MPAS_LIBDIR)
 $(MPAS_LIBDIR)/libmpas.a: cam_abortutils.o
 	$(MAKE) -C $(MPAS_LIBDIR) CC="$(CC)" FC="$(FC)" PIODEF="$(PIODEF)" FFLAGS='$(FREEFLAGS) $(FFLAGS)' \
 	FCINCLUDES='$(INCLDIR) $(INCS) -I$(ABS_INSTALL_SHAREDPATH)/include -I$(ABS_ESMF_PATH)/include'
 
+dyn_comp.o: $(MPAS_LIBDIR)/libmpas.a
 dyn_grid.o: $(MPAS_LIBDIR)/libmpas.a
 endif
 
