@@ -1023,6 +1023,13 @@
 
     <!-- MPAS-A grids -->
 
+    <model_grid alias="mpasa480_mpasa480" not_compset="_POP">
+      <grid name="atm">mpasa480</grid>
+      <grid name="lnd">mpasa480</grid>
+      <grid name="ocnice">mpasa480</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
     <model_grid alias="mpasa120_mpasa120" not_compset="_POP">
       <grid name="atm">mpasa120</grid>
       <grid name="lnd">mpasa120</grid>
@@ -1498,6 +1505,11 @@
       <file grid="ocnice"  mask="tx0.1v2">$DIN_LOC_ROOT/share/domains/domain.ocn.ne0CONUSne30x8_tx0.1v2.171010.nc</file>
       <desc>ne0np4CONUS.ne30x8 is a Spectral Elem 1-deg grid with a 1/8 deg refined region over the continental United States:</desc>
       <support>Test support only</support>
+    </domain>
+
+    <domain name="mpasa480">
+      <nx>2562</nx> <ny>1</ny>
+      <desc>MPAS-A 480-km quasi-uniform mesh:</desc>
     </domain>
 
     <domain name="mpasa120">
