@@ -30,6 +30,8 @@ CP    := cp
 exec_se: $(EXEC_SE)  Depends
 complib: $(COMPLIB)  Depends
 
+CAM_DYCORE ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) CAM_DYCORE --value)
+
 # Determine whether to compile threaded or not
 # Set the THREADDIR for the shared build
 # based on the threaded build status
@@ -571,6 +573,10 @@ ifeq ($(findstring -cosp,$(CAM_CONFIG_OPTS)),-cosp)
   endif
 endif
 
+ifeq ($(CAM_DYCORE),mpas)
+MPAS_LIBDIR:=$(abspath $(EXEROOT)/atm/obj/mpas)
+endif
+
 ifeq ($(MODEL),cam)
   # These RRTMG files take an extraordinarily long time to compile with optimization.
   # Until mods are made to read the data from files, just remove optimization from
@@ -590,6 +596,21 @@ $(COSP_LIBDIR)/libcosp.a: cam_abortutils.o
 	F90FLAGS_fixed='$(INCLDIR) $(INCS) $(FIXEDFLAGS) $(FFLAGS) $(FC_AUTO_R8)'
 
 cospsimulator_intr.o: $(COSP_LIBDIR)/libcosp.a
+endif
+
+ifdef MPAS_LIBDIR
+  ABS_INSTALL_SHAREDPATH = $(abspath $(INSTALL_SHAREDPATH))
+  ABS_ESMF_PATH = $(abspath $(INSTALL_SHAREDPATH)/$(COMP_INTERFACE)/$(ESMFDIR)/$(NINST_VALUE))
+  ifeq ($(PIO_VERSION),2)
+    PIODEF := -DUSE_PIO2
+  endif
+  INCLDIR+=-I$(MPAS_LIBDIR)
+$(MPAS_LIBDIR)/libmpas.a: cam_abortutils.o
+	$(MAKE) -C $(MPAS_LIBDIR) CC="$(CC)" FC="$(FC)" PIODEF="$(PIODEF)" FFLAGS='$(FREEFLAGS) $(FFLAGS)' \
+	FCINCLUDES='$(INCLDIR) $(INCS) -I$(ABS_INSTALL_SHAREDPATH)/include -I$(ABS_ESMF_PATH)/include'
+
+dyn_comp.o: $(MPAS_LIBDIR)/libmpas.a
+dyn_grid.o: $(MPAS_LIBDIR)/libmpas.a
 endif
 
 endif
@@ -892,6 +913,10 @@ ifdef COSP_LIBDIR
   ifeq ($(CIME_MODEL),cesm)
     ULIBDEP += $(COSP_LIBDIR)/libcosp.a
   endif
+endif
+
+ifdef MPAS_LIBDIR
+  ULIBDEP += $(MPAS_LIBDIR)/libmpas.a
 endif
 
 
