@@ -1058,6 +1058,41 @@
       <mask>gx1v7</mask>
     </model_grid>
 
+    <model_grid alias="mpasa60_mpasa60" not_compset="_POP">
+      <grid name="atm">mpasa60</grid>
+      <grid name="lnd">mpasa60</grid>
+      <grid name="ocnice">mpasa60</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
+    <model_grid alias="mpasa30_mpasa30" not_compset="_POP">
+      <grid name="atm">mpasa30</grid>
+      <grid name="lnd">mpasa30</grid>
+      <grid name="ocnice">mpasa30</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
+    <model_grid alias="mpasa15_mpasa15" not_compset="_POP">
+      <grid name="atm">mpasa15</grid>
+      <grid name="lnd">mpasa15</grid>
+      <grid name="ocnice">mpasa15</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
+    <model_grid alias="mpasa12_mpasa12" not_compset="_POP">
+      <grid name="atm">mpasa12</grid>
+      <grid name="lnd">mpasa12</grid>
+      <grid name="ocnice">mpasa12</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
+    <model_grid alias="mpasa15-3_mpasa15-3" not_compset="_POP">
+      <grid name="atm">mpasa15-3</grid>
+      <grid name="lnd">mpasa15-3</grid>
+      <grid name="ocnice">mpasa15-3</grid>
+      <mask>gx1v7</mask>
+    </model_grid>
+
     <!-- new runoff grids for data runoff model DROF -->
 
     <model_grid alias="T31_g37_rx1" compset="_DROF">
@@ -1545,6 +1580,31 @@
     <domain name="mpasa120">
       <nx>40962</nx> <ny>1</ny>
       <desc>MPAS-A 120-km quasi-uniform mesh:</desc>
+    </domain>
+
+    <domain name="mpasa60">
+      <nx>163842</nx> <ny>1</ny>
+      <desc>MPAS-A 60-km quasi-uniform mesh:</desc>
+    </domain>
+
+    <domain name="mpasa30">
+      <nx>655362</nx> <ny>1</ny>
+      <desc>MPAS-A 30-km quasi-uniform mesh:</desc>
+    </domain>
+
+    <domain name="mpasa15">
+      <nx>2621442</nx> <ny>1</ny>
+      <desc>MPAS-A 15-km quasi-uniform mesh:</desc>
+    </domain>
+
+    <domain name="mpasa12">
+      <nx>4096002</nx> <ny>1</ny>
+      <desc>MPAS-A 12-km quasi-uniform mesh:</desc>
+    </domain>
+
+    <domain name="mpasa15-3">
+      <nx>6488066</nx> <ny>1</ny>
+      <desc>MPAS-A 15-3-km variable-uniform mesh:</desc>
     </domain>
 
     <domain name="TL319">
