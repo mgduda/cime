@@ -434,6 +434,7 @@ class EnvBatch(EnvBase):
         alljobs = env_workflow.get_jobs()
         alljobs = [j for j in alljobs
                    if os.path.isfile(os.path.join(self._caseroot,get_batch_script_for_job(j)))]
+
         startindex = 0
         jobs = []
         firstjob = job
@@ -458,6 +459,7 @@ class EnvBatch(EnvBase):
 
             if self._batchtype == "cobalt":
                 break
+
         depid = OrderedDict()
         jobcmds = []
 
@@ -503,10 +505,10 @@ class EnvBatch(EnvBase):
 
                 if self._batchtype == "cobalt" or external_workflow:
                     break
-            if not external_workflow:
+
+            if not external_workflow and not no_batch:
                 expect(batch_job_id, "No result from jobs {}".format(jobs))
                 prev_job = batch_job_id
-
 
         if dry_run:
             return jobcmds
@@ -594,11 +596,15 @@ class EnvBatch(EnvBase):
             if not dry_run:
                 args = self._build_run_args(job, True, skip_pnl=skip_pnl, set_continue_run=resubmit_immediate,
                                             submit_resubmits=not resubmit_immediate)
-                if hasattr(case, function_name):
-                    getattr(case, function_name)(**{k: v for k, (v, _) in args.items()})
-                else:
-                    expect(os.path.isfile(job_name),"Could not find file {}".format(job_name))
-                    run_cmd_no_fail(os.path.join(self._caseroot,job_name), combine_output=True, verbose=True, from_dir=self._caseroot)
+                try:
+                    if hasattr(case, function_name):
+                        getattr(case, function_name)(**{k: v for k, (v, _) in args.items()})
+                    else:
+                        expect(os.path.isfile(job_name),"Could not find file {}".format(job_name))
+                        run_cmd_no_fail(os.path.join(self._caseroot,job_name), combine_output=True, verbose=True, from_dir=self._caseroot)
+                except Exception as e:
+                    # We don't want exception from the run phases getting into submit phase
+                    logger.warning("Exception from {}: {}".format(function_name, str(e)))
 
             return
 
@@ -673,7 +679,7 @@ class EnvBatch(EnvBase):
         batch_env_flag = self.get_value("batch_env", subgroup=None)
         run_args = self._build_run_args_str(job, False, skip_pnl=skip_pnl, set_continue_run=resubmit_immediate,
                                             submit_resubmits=not resubmit_immediate)
-        if batch_system == 'lsf':
+        if batch_system == 'lsf' and not batch_env_flag:
             sequence = (run_args, batchsubmit, submitargs, batchredirect, get_batch_script_for_job(job))
         elif batch_env_flag:
             sequence = (batchsubmit, submitargs, run_args, batchredirect, get_batch_script_for_job(job))

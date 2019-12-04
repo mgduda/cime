@@ -27,7 +27,7 @@ def _submit(case, job=None, no_batch=False, prereq=None, allow_fail=False, resub
             resubmit_immediate=False, skip_pnl=False, mail_user=None, mail_type=None,
             batch_args=None):
     if job is None:
-        job = case.get_primary_job()
+        job = case.get_first_job()
 
     # Check if CONTINUE_RUN value makes sense
     if job != "case.test" and case.get_value("CONTINUE_RUN"):
@@ -215,7 +215,6 @@ def check_case(self):
     if self.get_value('COMP_WAV') == 'ww':
         # the ww3 buildnml has dependancies on inputdata so we must run it again
         self.create_namelists(component='WAV')
-
 
     expect(self.get_value("BUILD_COMPLETE"), "Build complete is "
            "not True please rebuild the model by calling case.build")

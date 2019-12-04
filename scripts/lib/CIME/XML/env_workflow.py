@@ -65,6 +65,7 @@ class EnvWorkflow(EnvBase):
 
     def get_type_info(self, vid):
         gnodes = self.get_children("group")
+        type_info = None
         for gnode in gnodes:
             nodes = self.get_children("entry",{"id":vid}, root=gnode)
             type_info = None
@@ -82,7 +83,7 @@ class EnvWorkflow(EnvBase):
         tasks_per_node = self.get_value("tasks_per_node", subgroup=job)
         thread_count = self.get_value("thread_count", subgroup=job)
         num_nodes = None
-        if task_count is not None:
+        if task_count is not None and tasks_per_node is not None:
             task_count = int(task_count)
             num_nodes   = int(math.ceil(float(task_count)/float(tasks_per_node)))
             tasks_per_node =  task_count//num_nodes
