@@ -605,12 +605,18 @@ ifdef MPAS_LIBDIR
     PIODEF := -DUSE_PIO2
   endif
   INCLDIR+=-I$(MPAS_LIBDIR)
-$(MPAS_LIBDIR)/libmpas.a: cam_abortutils.o
+
+# To ensure that the MPAS-A dycore library is always updated whenever dycore source
+# files are changed, the libmpas target here is declared as PHONY; under ideal circumstances
+# this isn't necessary, since libmpas should never be an actual file (the library that is created
+# is named libmpas.a), but adding the PHONY declaration provides an extra bit of safety
+.PHONY: libmpas
+libmpas: cam_abortutils.o
 	$(MAKE) -C $(MPAS_LIBDIR) CC="$(CC)" FC="$(FC)" PIODEF="$(PIODEF)" FFLAGS='$(FREEFLAGS) $(FFLAGS)' \
 	FCINCLUDES='$(INCLDIR) $(INCS) -I$(ABS_INSTALL_SHAREDPATH)/include -I$(ABS_ESMF_PATH)/include'
 
-dyn_comp.o: $(MPAS_LIBDIR)/libmpas.a
-dyn_grid.o: $(MPAS_LIBDIR)/libmpas.a
+dyn_comp.o: libmpas
+dyn_grid.o: libmpas
 endif
 
 endif
