@@ -593,7 +593,17 @@ endif
 
 
 ifeq ($(CAM_DYCORE),mpas)
-MPAS_LIBDIR:=$(abspath $(EXEROOT)/atm/obj/mpas)
+  MPAS_LIBDIR:=$(abspath $(EXEROOT)/atm/obj/mpas)
+
+  # The NAG compilers apparently need access to MPAS-Atmosphere .mod files when compiling
+  # driver-level files. For example, without the addition to INCLDIR, below, the NAG 6.2
+  # compilers fail with:
+  # Fatal Error: .../CAM/cime/src/drivers/mct/main/cime_comp_mod.F90, line 49: Cannot find module MPAS_DERIVED_TYPES
+  ifeq ($(MODEL),driver)
+    ifeq ($(strip $(COMPILER)),nag)
+       INCLDIR += -I$(abspath $(EXEROOT)/atm/obj/mpas)
+    endif
+  endif
 endif
 
 ifeq ($(MODEL),cam)
